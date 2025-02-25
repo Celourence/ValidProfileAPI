@@ -21,7 +21,6 @@ builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 
 var app = builder.Build();
 
-// Configuração de Middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
