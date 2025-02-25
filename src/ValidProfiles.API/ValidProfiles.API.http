@@ -1,0 +1,6 @@
+@ValidProfiles.API_HostAddress = http://localhost:5073
+
+GET {{ValidProfiles.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
