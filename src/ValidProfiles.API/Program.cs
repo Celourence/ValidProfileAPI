@@ -1,25 +1,27 @@
-
 using Serilog;
-using ValidProfiles.Application;
-using ValidProfiles.Domain;
+using ValidProfiles.API.Middleware;
+using ValidProfiles.Application.Interfaces;
+using ValidProfiles.Application.Services;
 using ValidProfiles.Domain.Interfaces;
+using ValidProfiles.Infrastructure.Cache;
 using ValidProfiles.Infrastructure.Repositories;
-using ValidProfiles.Shared.ValidProfiles.API;
+using ValidProfiles.Infrastructure.IOC;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .CreateLogger();
-builder.Host.UseSerilog();
-
+SerilogConfig.ConfigureSerilog(builder);
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IProfileCache, ProfileCache>();
+builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
-builder.Services.AddScoped<IProfileService, ProfileService>();
-builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+builder.Services.AddSingleton<IProfileService, ProfileService>();
+builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
 
 var app = builder.Build();
+
+app.UseGlobalExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
@@ -29,13 +31,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStatusCodePages();
 app.UseRouting();
 app.UseAuthorization();
+app.UseSerilogRequestLogging();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
+app.MapControllers();
 
 app.Run();
+
+public partial class Program { }
