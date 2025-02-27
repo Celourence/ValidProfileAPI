@@ -3,9 +3,6 @@ using ValidProfiles.Application.Services;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
-using Xunit;
-using System.Threading.Tasks;
-using System.Collections.Generic;
 using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Application.DTOs;
 
