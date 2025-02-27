@@ -110,4 +110,27 @@ public class ProfileController : ControllerBase
         
         return NoContent();
     }
+
+    /// <param name="name">Nome do perfil a ser validado</param>
+    /// <param name="request">Lista de ações a serem validadas</param>
+    /// <response code="200">Resultado da validação das permissões</response>
+    /// <response code="404">Perfil não encontrado</response>
+    /// <response code="400">Requisição inválida</response>
+    /// <response code="500">Erro interno do servidor</response>
+    [HttpPost("{name}/validate")]
+    [ProducesResponseType(typeof(ValidationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> ValidateProfilePermissionsAsync(string name, [FromBody] ValidationRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+            
+        _logger.LogInformation($"Validando permissões para o perfil: {name}");
+
+        var response = await _profileService.ValidateProfilePermissionsAsync(name, request.Actions);
+        
+        return Ok(response);
+    }
 }

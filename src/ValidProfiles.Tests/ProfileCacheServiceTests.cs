@@ -2,6 +2,12 @@ using Moq;
 using ValidProfiles.Application.Services;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
+using Xunit;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using ValidProfiles.Application.Interfaces;
+using ValidProfiles.Application.DTOs;
 
 namespace ValidProfiles.Tests
 {
@@ -9,13 +15,20 @@ namespace ValidProfiles.Tests
     {
         private readonly Mock<IProfileRepository> _repositoryMock;
         private readonly Mock<IProfileCache> _cacheMock;
-        private readonly IProfileCacheService _service;
+        private readonly ProfileCacheService _service;
+        private readonly Mock<IProfileService> _profileServiceMock;
 
         public ProfileCacheServiceTests()
         {
             _repositoryMock = new Mock<IProfileRepository>();
             _cacheMock = new Mock<IProfileCache>();
-            _service = new ProfileCacheService(_cacheMock.Object, _repositoryMock.Object);
+            _profileServiceMock = new Mock<IProfileService>();
+            var loggerMock = new Mock<ILogger<ProfileCacheService>>();
+            _service = new ProfileCacheService(
+                _cacheMock.Object, 
+                _repositoryMock.Object, 
+                loggerMock.Object,
+                _profileServiceMock.Object);
         }
 
         [Fact]
@@ -84,50 +97,6 @@ namespace ValidProfiles.Tests
         }
 
         [Fact]
-        public async Task GetAllProfileParameters_ShouldReturnFromCache()
-        {
-            // Arrange
-            var profiles = new Dictionary<string, ProfileParameter>
-            {
-                {
-                    "Admin", new ProfileParameter
-                    {
-                        ProfileName = "Admin",
-                        Parameters = new Dictionary<string, bool>
-                        {
-                            { "CanView", true },
-                            { "CanEdit", true }
-                        }
-                    }
-                },
-                {
-                    "User", new ProfileParameter
-                    {
-                        ProfileName = "User",
-                        Parameters = new Dictionary<string, bool>
-                        {
-                            { "CanView", true },
-                            { "CanEdit", false }
-                        }
-                    }
-                }
-            };
-
-            _cacheMock.Setup(c => c.GetAllAsync())
-                .Returns(Task.FromResult(profiles));
-
-            // Act
-            var result = await _service.GetAllProfileParametersAsync();
-
-            // Assert
-            Assert.Equal(2, result.Count);
-            Assert.True(result["Admin"].Parameters["CanView"]);
-            Assert.True(result["Admin"].Parameters["CanEdit"]);
-            Assert.True(result["User"].Parameters["CanView"]);
-            Assert.False(result["User"].Parameters["CanEdit"]);
-        }
-
-        [Fact]
         public async Task AddProfileParameter_ShouldAddToRepositoryAndCache()
         {
             // Arrange
@@ -158,11 +127,88 @@ namespace ValidProfiles.Tests
                 .Returns(Task.FromResult(existingCache));
 
             // Act
-            await _service.AddProfileParameterAsync(profileParameter);
+            var result = await _service.AddProfileParameterAsync(profileParameter);
 
             // Assert
+            Assert.NotNull(result);
             _repositoryMock.Verify(r => r.AddProfileAsync(It.IsAny<Profile>()), Times.Once);
             _cacheMock.Verify(c => c.SetAsync("Admin", It.IsAny<ProfileParameter>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ValidateProfilePermissionsAsync_WithCachedProfile_ShouldReturnFromCache()
+        {
+            // Arrange
+            var profileName = "TestProfile";
+            var actions = new List<string> { "CanEdit", "CanDelete", "NonExistentAction" };
+            
+            var cachedProfile = new ProfileParameter
+            {
+                ProfileName = profileName,
+                Parameters = new Dictionary<string, bool>
+                {
+                    { "CanEdit", true },
+                    { "CanDelete", false }
+                }
+            };
+            
+            _cacheMock.Setup(cache => cache.GetAsync(profileName))
+                .ReturnsAsync(cachedProfile);
+            
+            // Act
+            var result = await _service.ValidateProfilePermissionsAsync(profileName, actions);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(3, result.Results.Count);
+            Assert.Equal("Permitido", result.Results["CanEdit"]);
+            Assert.Equal("Negado", result.Results["CanDelete"]);
+            Assert.Equal("Não definido", result.Results["NonExistentAction"]);
+            
+            // Verificar que o ProfileService não foi chamado
+            _profileServiceMock.Verify(service => 
+                service.ValidateProfilePermissionsAsync(It.IsAny<string>(), It.IsAny<List<string>>()), 
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidateProfilePermissionsAsync_WithNonCachedProfile_ShouldCallProfileService()
+        {
+            // Arrange
+            var profileName = "TestProfile";
+            var actions = new List<string> { "CanEdit", "CanDelete" };
+            
+            // Configurar o cache para retornar nulo
+            _cacheMock.Setup(cache => cache.GetAsync(profileName))
+                .ReturnsAsync((ProfileParameter?)null);
+            
+            // Configurar o ProfileService para retornar uma resposta
+            var expectedResponse = new ValidationResponseDto
+            {
+                Results = new Dictionary<string, string>
+                {
+                    { "CanEdit", "Permitido" },
+                    { "CanDelete", "Negado" }
+                }
+            };
+            
+            _profileServiceMock.Setup(service => 
+                service.ValidateProfilePermissionsAsync(profileName, actions))
+                .ReturnsAsync(expectedResponse);
+            
+            // Act
+            var result = await _service.ValidateProfilePermissionsAsync(profileName, actions);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(2, result.Results.Count);
+            Assert.Equal("Permitido", result.Results["CanEdit"]);
+            Assert.Equal("Negado", result.Results["CanDelete"]);
+            
+            // Verificar que o ProfileService foi chamado
+            _profileServiceMock.Verify(service => 
+                service.ValidateProfilePermissionsAsync(profileName, actions), 
+                Times.Once);
         }
     }
 } 

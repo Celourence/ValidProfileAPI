@@ -30,6 +30,7 @@
     <ProjectReference Include="..\ValidProfiles.Application\ValidProfiles.Application.csproj" />
     <ProjectReference Include="..\ValidProfiles.Domain\ValidProfiles.Domain.csproj" />
     <ProjectReference Include="..\ValidProfiles.Infrastructure\ValidProfiles.Infrastructure.csproj" />
+    <ProjectReference Include="..\ValidProfiles.API\ValidProfiles.API.csproj" />
   </ItemGroup>
 
 </Project>
