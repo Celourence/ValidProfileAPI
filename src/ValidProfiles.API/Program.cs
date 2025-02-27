@@ -1,43 +1,67 @@
-using Serilog;
-using ValidProfiles.API.Middleware;
-using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Application.Services;
+using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Domain.Interfaces;
 using ValidProfiles.Infrastructure.Cache;
 using ValidProfiles.Infrastructure.Repositories;
 using ValidProfiles.Infrastructure.IOC;
+using Serilog;
+using ValidProfiles.API.Middleware;
 
-var builder = WebApplication.CreateBuilder(args);
+try
+{
+    // Cria o builder da aplicação
+    var builder = WebApplication.CreateBuilder(args);
 
-SerilogConfig.ConfigureSerilog(builder);
-builder.Services.AddMemoryCache();
-builder.Services.AddSingleton<IProfileCache, ProfileCache>();
-builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
-builder.Services.AddSingleton<IProfileService, ProfileService>();
-builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
+    // Configuração do Serilog
+    builder.ConfigureSerilog();
 
-    // Constr�i a aplica��o
+    // Adiciona os serviços de cache
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<IProfileCache, ProfileCache>();
+    builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
+
+    // Adiciona os outros serviços
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
+    builder.Services.AddSingleton<IProfileService, ProfileService>();
+    builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
+
+    // Constrói a aplicação
     var app = builder.Build();
 
-app.UseGlobalExceptionHandling();
+    // Adiciona o middleware de tratamento global de exceções
+    app.UseGlobalExceptionHandling();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
+    // Configura ambiente de desenvolvimento
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
+    }
+
+    // Configuração da pipeline de requisições HTTP
+    app.UseHttpsRedirection();
+    app.UseRouting();
+    app.UseAuthorization();
+
+    // Configuração do Serilog para logging de requisições
+    app.UseSerilogRequestLogging();
+
+    app.MapControllers();
+
+    // Executa a aplicação
+    app.Run();
+
+    return 0;
 }
-
-app.UseHttpsRedirection();
-app.UseRouting();
-app.UseAuthorization();
-app.UseSerilogRequestLogging();
-
-app.MapControllers();
-
-app.Run();
-
-public partial class Program { }
+catch (Exception ex)
+{
+    Log.Fatal(ex, "A aplicação falhou ao iniciar");
+    return 1;
+}
+finally
+{
+    Log.CloseAndFlush();
+}

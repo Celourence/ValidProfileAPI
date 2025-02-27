@@ -4,7 +4,6 @@ using ValidProfiles.Domain;
 using ValidProfiles.Domain.Constants;
 using ValidProfiles.Domain.Exceptions;
 using ValidProfiles.Domain.Interfaces;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace ValidProfiles.Application.Services;
@@ -113,6 +112,80 @@ public class ProfileService : IProfileService
             Name = profile.Name,
             Parameters = profile.Parameters
         };
+    }
+
+    public async Task<ProfileResponseDto> UpdateProfileAsync(string name, Dictionary<string, bool> parameters)
+    {
+        _logger.LogDebug("Iniciando atualização do perfil {ProfileName}", name);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Tentativa de atualizar perfil com nome vazio");
+            throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
+        }
+        
+        // Verificar se o perfil existe
+        var profile = await _profileRepository.GetProfileByNameAsync(name);
+        if (profile == null)
+        {
+            _logger.LogWarning("Tentativa de atualizar perfil inexistente: {ProfileName}", name);
+            throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
+        }
+        
+        // Validar parâmetros
+        if (parameters == null || parameters.Count == 0)
+        {
+            _logger.LogWarning("Tentativa de atualizar perfil sem parâmetros: {ProfileName}", name);
+            throw new BadRequestException("A lista de parâmetros não pode estar vazia");
+        }
+        
+        foreach (var param in parameters)
+        {
+            if (string.IsNullOrWhiteSpace(param.Key))
+            {
+                _logger.LogWarning("Parâmetro com nome vazio na atualização do perfil {ProfileName}", name);
+                throw new BadRequestException(ErrorMessages.Profile.EmptyParameterName);
+            }
+        }
+        
+        // Atualizar os parâmetros do perfil
+        _logger.LogInformation("Atualizando perfil: {ProfileName}", name);
+        
+        profile.Parameters = parameters;
+        var updatedProfile = await _profileRepository.UpdateProfileAsync(profile);
+        
+        _logger.LogInformation("Perfil atualizado com sucesso: {ProfileName}", name);
+        
+        return new ProfileResponseDto
+        {
+            Name = updatedProfile.Name,
+            Parameters = updatedProfile.Parameters
+        };
+    }
+
+    public async Task DeleteProfileAsync(string name)
+    {
+        _logger.LogDebug("Iniciando exclusão do perfil {ProfileName}", name);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Tentativa de excluir perfil com nome vazio");
+            throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
+        }
+        
+        // Verificar se o perfil existe
+        var profile = await _profileRepository.GetProfileByNameAsync(name);
+        if (profile == null)
+        {
+            _logger.LogWarning("Tentativa de excluir perfil inexistente: {ProfileName}", name);
+            throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
+        }
+        
+        _logger.LogInformation("Excluindo perfil: {ProfileName}", name);
+        
+        await _profileRepository.DeleteProfileAsync(name);
+        
+        _logger.LogInformation("Perfil excluído com sucesso: {ProfileName}", name);
     }
 }
 

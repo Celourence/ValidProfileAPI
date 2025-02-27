@@ -45,7 +45,7 @@ namespace ValidProfiles.Application.Services
                 p => new ProfileParameter
                 {
                     ProfileName = p.Name,
-                    Parameters = p.Parameters ?? new Dictionary<string, string>()
+                    Parameters = p.Parameters ?? new Dictionary<string, bool>()
                 });
 
             if (profileParameters.Count > 0)

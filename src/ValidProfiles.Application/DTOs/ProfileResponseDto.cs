@@ -20,5 +20,5 @@ public class ProfileResponseDto
     /// </summary>
     [JsonPropertyName("parameters")]
     [SwaggerSchema("Parâmetros do perfil")]
-    public Dictionary<string, string> Parameters { get; set; } = new();
+    public Dictionary<string, bool> Parameters { get; set; } = new();
 } 
