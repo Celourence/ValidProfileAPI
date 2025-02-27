@@ -34,9 +34,9 @@ public static class SerilogConfig
                 .Enrich.WithEnvironmentName()
                 .Enrich.WithProperty("ApplicationName", "ValidProfiles.API")
                 .WriteTo.Console(
-                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}")
                 .WriteTo.Debug(
-                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}");
 
             // Adiciona log em arquivo se for ambiente de produção ou homologação
             if (!env.IsDevelopment())
@@ -44,7 +44,7 @@ public static class SerilogConfig
                 loggerConfig.WriteTo.File(
                     Path.Combine(logPath, "log-.txt"),
                     rollingInterval: RollingInterval.Day,
-                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+                    outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj}{NewLine}",
                     fileSizeLimitBytes: 10 * 1024 * 1024, // 10MB por arquivo
                     retainedFileCountLimit: 30); // Mantém arquivos de 30 dias
             }

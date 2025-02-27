@@ -24,14 +24,14 @@ public class ErrorHandlingMiddleware
         }
         catch (CustomException ex)
         {
-            _logger.LogWarning(ex, "Erro de domínio: {Message}, Código: {ErrorCode}, Status: {StatusCode}", 
+            _logger.LogWarning("Erro de domínio: {Message}, Código: {ErrorCode}, Status: {StatusCode}", 
                 ex.Message, ex.ErrorCode, ex.StatusCode);
                 
             await HandleExceptionAsync(context, ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro não tratado: {Message}", ex.Message);
+            _logger.LogError("Erro não tratado: {Message}", ex.Message);
             
             await HandleExceptionAsync(context, ex);
         }
@@ -59,7 +59,8 @@ public class ErrorHandlingMiddleware
                 errorResponse.Error = new ErrorDetails
                 {
                     Message = customException.Message,
-                    Code = customException.ErrorCode
+                    Code = customException.ErrorCode,
+                    StatusCode = (int)customException.StatusCode
                 };
                 break;
                 
@@ -68,7 +69,8 @@ public class ErrorHandlingMiddleware
                 errorResponse.Error = new ErrorDetails
                 {
                     Message = ErrorMessages.Profile.ProfileNotFound,
-                    Code = ErrorCodes.General.NotFound
+                    Code = ErrorCodes.General.NotFound,
+                    StatusCode = (int)HttpStatusCode.NotFound
                 };
                 break;
                 
@@ -77,7 +79,8 @@ public class ErrorHandlingMiddleware
                 errorResponse.Error = new ErrorDetails
                 {
                     Message = ErrorMessages.General.InternalServerError,
-                    Code = ErrorCodes.General.InternalServerError
+                    Code = ErrorCodes.General.InternalServerError,
+                    StatusCode = (int)HttpStatusCode.InternalServerError
                 };
                 break;
         }
@@ -99,4 +102,5 @@ public class ErrorDetails
 {
     public required string Message { get; set; }
     public required string Code { get; set; }
+    public int StatusCode { get; set; }
 }

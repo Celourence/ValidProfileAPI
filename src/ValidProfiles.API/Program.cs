@@ -40,21 +40,16 @@ try
     // Constrói a aplicação
     var app = builder.Build();
 
-    // Adiciona o middleware de tratamento global de exceções
+    // Adiciona o middleware de tratamento global de exceções - deve ser o primeiro para capturar todas as exceções
     app.UseGlobalExceptionHandling();
-
-    // Configura ambiente de desenvolvimento
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseDeveloperExceptionPage();
-        app.UseSwagger();
-        app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
-    }
 
     // Configuração da pipeline de requisições HTTP
     app.UseHttpsRedirection();
     app.UseRouting();
-    app.UseAuthorization();
+
+    // Configura Swagger para todos os ambientes
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
 
     // Configuração do Serilog para logging de requisições
     app.UseSerilogRequestLogging();
