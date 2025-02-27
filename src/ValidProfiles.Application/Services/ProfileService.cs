@@ -4,7 +4,6 @@ using ValidProfiles.Domain;
 using ValidProfiles.Domain.Constants;
 using ValidProfiles.Domain.Exceptions;
 using ValidProfiles.Domain.Interfaces;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
 namespace ValidProfiles.Application.Services;
