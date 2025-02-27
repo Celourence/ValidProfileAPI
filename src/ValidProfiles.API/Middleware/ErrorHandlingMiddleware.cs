@@ -24,14 +24,14 @@ public class ErrorHandlingMiddleware
         }
         catch (CustomException ex)
         {
-            _logger.LogWarning("Erro de domínio: {Message}, Código: {ErrorCode}, Status: {StatusCode}", 
+            _logger.LogWarning(LogMessages.Middleware.DomainError, 
                 ex.Message, ex.ErrorCode, ex.StatusCode);
                 
             await HandleExceptionAsync(context, ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError("Erro não tratado: {Message}", ex.Message);
+            _logger.LogError(LogMessages.Middleware.UnhandledError, ex.Message);
             
             await HandleExceptionAsync(context, ex);
         }

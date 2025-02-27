@@ -5,7 +5,7 @@ using ValidProfiles.Infrastructure.Repositories;
 using ValidProfiles.Infrastructure.IOC;
 using Serilog;
 using ValidProfiles.API.Middleware;
-using Microsoft.Extensions.DependencyInjection;
+using ValidProfiles.Domain.Constants;
 
 try
 {
@@ -23,6 +23,7 @@ try
     
     builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
     builder.Services.AddSingleton<IProfileService, ProfileService>();
+    builder.Services.AddBackgroundServices();
 
     
     var app = builder.Build();
@@ -43,7 +44,7 @@ try
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "A aplicação falhou ao iniciar");
+    Log.Fatal(ex, LogMessages.Application.ApplicationStartFailed);
     return 1;
 }
 finally

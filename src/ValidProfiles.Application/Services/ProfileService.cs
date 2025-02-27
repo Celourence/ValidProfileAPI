@@ -21,7 +21,7 @@ public class ProfileService : IProfileService
 
     public async Task<ProfilesResponseDto> GetProfilesAsync()
     {
-        _logger.LogDebug("Obtendo todos os perfis");
+        _logger.LogDebug("Getting all profiles");
         var profiles = await _profileRepository.GetProfilesAsync();
         return new ProfilesResponseDto
         {
@@ -35,11 +35,11 @@ public class ProfileService : IProfileService
 
     public async Task<ProfileResponseDto> GetProfileByNameAsync(string name)
     {
-        _logger.LogDebug("Buscando perfil por nome: {ProfileName}", name);
+        _logger.LogDebug("Finding profile by name: {ProfileName}", name);
         
         if (string.IsNullOrWhiteSpace(name))
         {
-            _logger.LogWarning("Tentativa de buscar perfil com nome vazio");
+            _logger.LogWarning("Attempt to find profile with empty name");
             throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
         }
         
@@ -47,11 +47,11 @@ public class ProfileService : IProfileService
         
         if (profile == null)
         {
-            _logger.LogWarning("Perfil não encontrado: {ProfileName}", name);
+            _logger.LogWarning(LogMessages.ProfileService.ProfileNotFound, name);
             throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
         }
         
-        _logger.LogInformation("Perfil encontrado: {ProfileName}", name);
+        _logger.LogInformation("Profile found: {ProfileName}", name);
         
         return new ProfileResponseDto
         {
@@ -62,18 +62,22 @@ public class ProfileService : IProfileService
 
     public async Task<ProfileResponseDto> AddProfileAsync(Profile profile)
     {
-        _logger.LogDebug("Iniciando validação do perfil {ProfileName}", profile.Name);
-                
+        _logger.LogDebug(LogMessages.ProfileService.StartingProfileCreation, profile.Name);
+        
+        // Validação do nome já é feita pelo ProfileDto na API
+        
         var existingProfiles = await _profileRepository.GetProfilesAsync();
         if (existingProfiles.Any(p => p.Name.Equals(profile.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            _logger.LogWarning("Tentativa de adicionar perfil com nome já existente: {ProfileName}", profile.Name);
+            _logger.LogWarning("Attempt to add profile with existing name: {ProfileName}", profile.Name);
             throw new ConflictException(ErrorMessages.Profile.ProfileAlreadyExists);
         }
         
+        // Validação dos parâmetros já é feita pelo ProfileDto na API, mas verificamos novamente
+        // para casos onde a API não é usada diretamente
         if (profile.Parameters == null || profile.Parameters.Count == 0)
         {
-            _logger.LogWarning("Tentativa de adicionar perfil sem parâmetros: {ProfileName}", profile.Name);
+            _logger.LogWarning("Attempt to add profile without parameters: {ProfileName}", profile.Name);
             throw new BadRequestException("Parameter list cannot be empty");
         }
 
@@ -81,17 +85,16 @@ public class ProfileService : IProfileService
         {
             if (string.IsNullOrWhiteSpace(param.Key))
             {
-                _logger.LogWarning("Parâmetro com nome vazio no perfil {ProfileName}", profile.Name);
+                _logger.LogWarning("Parameter with empty name in profile {ProfileName}", profile.Name);
                 throw new BadRequestException(ErrorMessages.Profile.EmptyParameterName);
             }
-            
         }
         
-        _logger.LogInformation("Adicionando novo perfil: {ProfileName}", profile.Name);
+        _logger.LogInformation("Adding new profile: {ProfileName}", profile.Name);
         
         await _profileRepository.AddProfileAsync(profile);
         
-        _logger.LogInformation("Perfil adicionado com sucesso: {ProfileName}", profile.Name);
+        _logger.LogInformation(LogMessages.ProfileService.ProfileCreated, profile.Name);
         
         return new ProfileResponseDto
         {
@@ -102,18 +105,25 @@ public class ProfileService : IProfileService
 
     public async Task<ProfileResponseDto> UpdateProfileAsync(string name, Dictionary<string, bool> parameters)
     {
-        _logger.LogDebug("Iniciando atualização do perfil {ProfileName}", name);
+        _logger.LogDebug(LogMessages.ProfileService.StartingProfileUpdate, name);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Attempt to update profile with empty name");
+            throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
+        }
                 
+        // Validação de parameters já é feita pelo ProfileUpdateDto
         if (parameters == null || parameters.Count == 0)
         {
-            _logger.LogWarning("Tentativa de atualizar perfil com parâmetros vazios: {ProfileName}", name);
+            _logger.LogWarning("Attempt to update profile with empty parameters: {ProfileName}", name);
             throw new BadRequestException("Parameter list cannot be empty");
         }
 
         var profile = await _profileRepository.GetProfileByNameAsync(name);
         if (profile == null)
         {
-            _logger.LogWarning("Tentativa de atualizar perfil inexistente: {ProfileName}", name);
+            _logger.LogWarning("Attempt to update non-existing profile: {ProfileName}", name);
             throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
         }
         
@@ -121,18 +131,18 @@ public class ProfileService : IProfileService
         {
             if (string.IsNullOrWhiteSpace(param.Key))
             {
-                _logger.LogWarning("Parâmetro com nome vazio na atualização do perfil {ProfileName}", name);
+                _logger.LogWarning("Parameter with empty name in profile update {ProfileName}", name);
                 throw new BadRequestException(ErrorMessages.Profile.EmptyParameterName);
             }
         }
         
-        _logger.LogInformation("Atualizando parâmetros do perfil: {ProfileName}", name);
+        _logger.LogInformation("Updating profile parameters: {ProfileName}", name);
         
         profile.Parameters = parameters;
         
         await _profileRepository.UpdateProfileAsync(profile);
         
-        _logger.LogInformation("Perfil atualizado com sucesso: {ProfileName}", name);
+        _logger.LogInformation(LogMessages.ProfileService.ProfileUpdated, name);
         
         return new ProfileResponseDto
         {
@@ -143,37 +153,48 @@ public class ProfileService : IProfileService
     
     public async Task DeleteProfileAsync(string name)
     {
-        _logger.LogDebug("Iniciando remoção do perfil {ProfileName}", name);
+        _logger.LogDebug(LogMessages.ProfileService.StartingProfileDeletion, name);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Attempt to delete profile with empty name");
+            throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
+        }
                 
         var profile = await _profileRepository.GetProfileByNameAsync(name);
         if (profile == null)
         {
-            _logger.LogWarning("Tentativa de remover perfil inexistente: {ProfileName}", name);
+            _logger.LogWarning("Attempt to remove non-existing profile: {ProfileName}", name);
             throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
         }
         
-        _logger.LogInformation("Removendo perfil: {ProfileName}", name);
+        _logger.LogInformation("Removing profile: {ProfileName}", name);
         
         await _profileRepository.DeleteProfileAsync(name);
         
-        _logger.LogInformation("Perfil removido com sucesso: {ProfileName}", name);
+        _logger.LogInformation(LogMessages.ProfileService.ProfileDeleted, name);
     }
 
     public async Task<ValidationResponseDto> ValidateProfilePermissionsAsync(string name, List<string> actions)
     {
-        _logger.LogInformation("Validando permissões para o perfil: {ProfileName}", name);
-        _logger.LogDebug("Validando permissões para o perfil {ProfileName}", name);
+        _logger.LogInformation(LogMessages.ProfileService.ValidatingPermissions, name);
+        
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            _logger.LogWarning("Attempt to validate permissions with empty profile name");
+            throw new BadRequestException(ErrorMessages.Profile.InvalidProfileName);
+        }
        
         if (actions == null || actions.Count == 0)
         {
-            _logger.LogWarning("Lista de ações vazia para validação do perfil {ProfileName}", name);
+            _logger.LogWarning("Empty action list for profile validation {ProfileName}", name);
             throw new BadRequestException("Action list cannot be empty");
         }
         
         var profile = await _profileRepository.GetProfileByNameAsync(name);
         if (profile == null)
         {
-            _logger.LogWarning("Tentativa de validar permissões para perfil inexistente: {ProfileName}", name);
+            _logger.LogWarning("Attempt to validate permissions for non-existing profile: {ProfileName}", name);
             throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
         }
         
@@ -184,7 +205,7 @@ public class ProfileService : IProfileService
         
         foreach (var action in actions)
         {
-            _logger.LogDebug("Validando permissão '{Action}' para o perfil {ProfileName}", action, name);
+            _logger.LogDebug("Validating permission '{Action}' for profile {ProfileName}", action, name);
             
             if (profile.Parameters.TryGetValue(action, out bool allowed))
             {
@@ -195,11 +216,11 @@ public class ProfileService : IProfileService
                 response.Results[action] = "Undefined";
             }
             
-            _logger.LogDebug("Resultado da permissão '{Action}' para o perfil {ProfileName}: {Result}", 
+            _logger.LogDebug("Permission result '{Action}' for profile {ProfileName}: {Result}", 
                 action, name, response.Results[action]);
         }
         
-        _logger.LogInformation("Validação de permissões concluída para o perfil {ProfileName}", name);
+        _logger.LogInformation(LogMessages.ProfileService.PermissionValidationResult, name, response.Results.Count);
         return response;
     }
 }

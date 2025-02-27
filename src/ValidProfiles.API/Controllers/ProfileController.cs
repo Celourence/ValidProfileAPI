@@ -69,10 +69,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AddProfileAsync([FromBody] ProfileDto profile)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-            
+    {            
         _logger.LogInformation($"Adicionando perfil: {profile.Name}");
 
         var response = await _profileService.AddProfileAsync(new Profile
@@ -100,10 +97,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> UpdateProfileAsync(string name, [FromBody] ProfileUpdateDto profileUpdate)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-            
+    {            
         _logger.LogInformation($"Atualizando perfil: {name}");
 
         var response = await _profileService.UpdateProfileAsync(name, profileUpdate.Parameters);
