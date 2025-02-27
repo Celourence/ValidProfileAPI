@@ -16,9 +16,6 @@ public class ProfileController : ControllerBase
     public ProfileController(IProfileService profileService, ILogger<ProfileController> logger) => 
         (_profileService, _logger) = (profileService, logger);
 
-    /// <summary>
-    /// Obtém todos os perfis e seus parâmetros
-    /// </summary>
     /// <response code="200">Lista de perfis com seus parâmetros</response>
     /// <response code="500">Erro interno do servidor</response>
     [HttpGet]
@@ -31,9 +28,23 @@ public class ProfileController : ControllerBase
         return Ok(response.Profiles);
     }
 
-    /// <summary>
-    /// Adiciona um novo perfil com seus parâmetros
-    /// </summary>
+    /// <param name="name">Nome do perfil a ser buscado</param>
+    /// <response code="200">Perfil encontrado com sucesso</response>
+    /// <response code="404">Perfil não encontrado</response>
+    /// <response code="400">Requisição inválida</response>
+    /// <response code="500">Erro interno do servidor</response>
+    [HttpGet("{name}")]
+    [ProducesResponseType(typeof(ProfileResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetProfileByNameAsync(string name)
+    {
+        _logger.LogInformation($"Buscando perfil: {name}");
+        var profile = await _profileService.GetProfileByNameAsync(name);
+        return Ok(profile);
+    }
+
     /// <param name="profile">Dados do perfil a ser adicionado</param>
     /// <response code="201">Perfil criado com sucesso</response>
     /// <response code="400">Requisição inválida</response>
@@ -49,8 +60,6 @@ public class ProfileController : ControllerBase
             
         _logger.LogInformation($"Adicionando perfil: {profile.Name}");
 
-        profile.Parameters ??= new Dictionary<string, string>();
-        
         var response = await _profileService.AddProfileAsync(new Profile
         {
             Name = profile.Name,

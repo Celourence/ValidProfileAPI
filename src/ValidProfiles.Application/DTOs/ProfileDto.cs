@@ -21,7 +21,12 @@ public class ProfileDto
     /// <summary>
     /// Parâmetros do perfil
     /// </summary>
+    /// <remarks>
+    /// Deve conter pelo menos um parâmetro.
+    /// Todos os valores são do tipo booleano.
+    /// </remarks>
     [JsonPropertyName("parameters")]
-    [SwaggerSchema("Parâmetros do perfil")]
-    public Dictionary<string, string> Parameters { get; set; } = new();
+    [SwaggerSchema("Parâmetros do perfil (valores booleanos)")]
+    [Required(ErrorMessage = "Pelo menos um parâmetro é obrigatório")]
+    public Dictionary<string, bool> Parameters { get; set; } = new();
 }
