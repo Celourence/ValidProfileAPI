@@ -6,8 +6,13 @@ namespace ValidProfiles.Application.DTOs
     public class ValidationResponseDto
     {
         /// <summary>
+        /// Nome do perfil
+        /// </summary>
+        public string ProfileName { get; set; }
+
+        /// <summary>
         /// Dicionário contendo as ações e seus respectivos resultados de validação
         /// </summary>
-        public Dictionary<string, string> Results { get; set; } = new();
+        public Dictionary<string, string> Results { get; set; } = new Dictionary<string, string>();
     }
 } 
