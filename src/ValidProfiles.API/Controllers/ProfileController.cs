@@ -150,10 +150,7 @@ public class ProfileController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ValidateProfilePermissionsAsync(string name, [FromBody] ValidationRequestDto request)
-    {
-        if (!ModelState.IsValid)
-            return BadRequest(ModelState);
-            
+    {          
         _logger.LogInformation($"Validando permissões para o perfil: {name}");
 
         var response = await _profileService.ValidateProfilePermissionsAsync(name, request.Actions);

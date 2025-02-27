@@ -10,9 +10,6 @@ namespace ValidProfiles.Infrastructure.IOC;
 /// </summary>
 public static class SwaggerConfig
 {
-    /// <summary>
-    /// Configura o Swagger para a API
-    /// </summary>
     public static void Configure(SwaggerGenOptions options)
     {
         options.SwaggerDoc("v1", new OpenApiInfo
@@ -20,14 +17,8 @@ public static class SwaggerConfig
             Version = "v1",
             Title = "ValidProfiles API",
             Description = "API para gerenciamento de perfis válidos",
-            Contact = new OpenApiContact
-            {
-                Name = "Suporte",
-                Email = "suporte@validprofiles.com"
-            }
         });
 
-        // Adiciona descrições XML dos endpoints, se disponível
         var xmlFile = $"{Assembly.GetEntryAssembly()?.GetName().Name}.xml";
         var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
         if (File.Exists(xmlPath))

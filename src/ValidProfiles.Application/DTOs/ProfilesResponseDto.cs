@@ -8,9 +8,6 @@ namespace ValidProfiles.Application.DTOs;
 /// </summary>
 public class ProfilesResponseDto
 {
-    /// <summary>
-    /// Lista de perfis
-    /// </summary>
     [JsonPropertyName("profiles")]
     [SwaggerSchema("Lista de perfis")]
     public List<ProfileResponseDto> Profiles { get; set; } = new();

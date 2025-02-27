@@ -31,7 +31,6 @@ public class ProfileRepository : IProfileRepository
             
         if (existingProfile != null)
         {
-            // Atualiza os parâmetros do perfil
             existingProfile.Parameters = profile.Parameters;
         }
         

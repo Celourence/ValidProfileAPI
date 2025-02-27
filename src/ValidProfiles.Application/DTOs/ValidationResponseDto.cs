@@ -8,17 +8,9 @@ namespace ValidProfiles.Application.DTOs
     /// </summary>
     public class ValidationResponseDto
     {
-        /// <summary>
-        /// Nome do perfil validado
-        /// </summary>
         [JsonPropertyName("profileName")]
         public required string ProfileName { get; set; }
         
-        /// <summary>
-        /// Resultados das validações de permissões
-        /// Chave: Nome da ação
-        /// Valor: Resultado da validação (Allowed, Denied, Undefined)
-        /// </summary>
         [JsonPropertyName("results")]
         public Dictionary<string, string> Results { get; set; } = new Dictionary<string, string>();
     }

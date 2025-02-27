@@ -7,9 +7,6 @@ namespace ValidProfiles.Application.DTOs
     /// </summary>
     public class ValidationRequestDto
     {
-        /// <summary>
-        /// Lista de ações a serem validadas
-        /// </summary>
         [Required]
         public List<string> Actions { get; set; } = new List<string>();
     }

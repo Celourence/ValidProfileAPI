@@ -1,8 +1,5 @@
 namespace ValidProfiles.Domain.Constants
 {
-    /// <summary>
-    /// Códigos de erro padronizados para a aplicação
-    /// </summary>
     public static class ErrorCodes
     {
         public static class Profile

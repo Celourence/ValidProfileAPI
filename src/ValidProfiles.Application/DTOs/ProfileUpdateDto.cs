@@ -7,9 +7,6 @@ namespace ValidProfiles.Application.DTOs
     /// </summary>
     public class ProfileUpdateDto
     {
-        /// <summary>
-        /// Parâmetros do perfil (nome do parâmetro e valor)
-        /// </summary>
         [Required(ErrorMessage = "Parameters are required")]
         public Dictionary<string, bool> Parameters { get; set; } = new();
     }

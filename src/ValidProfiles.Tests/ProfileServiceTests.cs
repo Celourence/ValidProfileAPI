@@ -48,8 +48,7 @@ namespace ValidProfiles.Tests
             Assert.Equal(2, result.Parameters.Count);
             Assert.True(result.Parameters["param1"]);
             Assert.False(result.Parameters["param2"]);
-            
-            // Verifica que o repositório foi chamado
+
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
         }
 
@@ -65,7 +64,6 @@ namespace ValidProfiles.Tests
 
             Assert.Equal(ErrorMessages.Profile.InvalidProfileName, exception.Message);
             
-            // Verifica que o repositório não foi chamado
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(It.IsAny<string>()), Times.Never);
         }
 
@@ -84,7 +82,6 @@ namespace ValidProfiles.Tests
 
             Assert.Equal(ErrorMessages.Profile.ProfileNotFound, exception.Message);
             
-            // Verifica que o repositório foi chamado
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
         }
         
@@ -131,7 +128,6 @@ namespace ValidProfiles.Tests
             Assert.False(result.Parameters["param1"]);
             Assert.True(result.Parameters["param3"]);
             
-            // Verifica que os métodos do repositório foram chamados
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
             _repositoryMock.Verify(r => r.UpdateProfileAsync(It.IsAny<Profile>()), Times.Once);
         }
@@ -148,8 +144,7 @@ namespace ValidProfiles.Tests
                 _service.UpdateProfileAsync(profileName, parameters));
 
             Assert.Equal(ErrorMessages.Profile.InvalidProfileName, exception.Message);
-            
-            // Verifica que o repositório não foi chamado
+
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(It.IsAny<string>()), Times.Never);
             _repositoryMock.Verify(r => r.UpdateProfileAsync(It.IsAny<Profile>()), Times.Never);
         }
@@ -170,7 +165,6 @@ namespace ValidProfiles.Tests
 
             Assert.Equal(ErrorMessages.Profile.ProfileNotFound, exception.Message);
             
-            // Verifica que os métodos do repositório foram chamados corretamente
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
             _repositoryMock.Verify(r => r.UpdateProfileAsync(It.IsAny<Profile>()), Times.Never);
         }
@@ -201,8 +195,6 @@ namespace ValidProfiles.Tests
 
             Assert.Equal("Parameter list cannot be empty", exception.Message);
             
-            // Na implementação atual, o método não chega a chamar o repositório quando
-            // os parâmetros estão vazios, então não verificamos chamadas ao repositório
             _repositoryMock.Verify(r => r.UpdateProfileAsync(It.IsAny<Profile>()), Times.Never);
         }
         
@@ -227,7 +219,6 @@ namespace ValidProfiles.Tests
             await _service.DeleteProfileAsync(profileName);
 
             // Assert
-            // Verifica que os métodos do repositório foram chamados
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
             _repositoryMock.Verify(r => r.DeleteProfileAsync(profileName), Times.Once);
         }
@@ -243,8 +234,6 @@ namespace ValidProfiles.Tests
                 _service.DeleteProfileAsync(profileName));
 
             Assert.Equal(ErrorMessages.Profile.InvalidProfileName, exception.Message);
-            
-            // Verifica que o repositório não foi chamado
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(It.IsAny<string>()), Times.Never);
             _repositoryMock.Verify(r => r.DeleteProfileAsync(It.IsAny<string>()), Times.Never);
         }
@@ -264,7 +253,6 @@ namespace ValidProfiles.Tests
 
             Assert.Equal(ErrorMessages.Profile.ProfileNotFound, exception.Message);
             
-            // Verifica que os métodos do repositório foram chamados corretamente
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
             _repositoryMock.Verify(r => r.DeleteProfileAsync(It.IsAny<string>()), Times.Never);
         }
@@ -342,7 +330,6 @@ namespace ValidProfiles.Tests
             Assert.False(result.Parameters["param1"]);
             Assert.True(result.Parameters["param3"]);
             
-            // Verifica que os métodos do repositório foram chamados
             _repositoryMock.Verify(r => r.GetProfileByNameAsync(profileName), Times.Once);
             _repositoryMock.Verify(r => r.UpdateProfileAsync(It.Is<Profile>(p => 
                 p.Name == profileName && 
@@ -446,7 +433,6 @@ namespace ValidProfiles.Tests
             var exception = await Assert.ThrowsAsync<BadRequestException>(() => 
                 _service.AddProfileAsync(profile));
                 
-            // Verificar a mensagem de erro
             Assert.Equal("Parameter list cannot be empty", exception.Message);
         }
     }
