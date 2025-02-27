@@ -10,5 +10,6 @@ namespace ValidProfiles.Application.Interfaces
         Task<ProfileResponseDto> AddProfileAsync(Profile profile);
         Task<ProfileResponseDto> UpdateProfileAsync(string name, Dictionary<string, bool> parameters);
         Task DeleteProfileAsync(string name);
+        Task<ValidationResponseDto> ValidateProfilePermissionsAsync(string name, List<string> actions);
     }
 } 
