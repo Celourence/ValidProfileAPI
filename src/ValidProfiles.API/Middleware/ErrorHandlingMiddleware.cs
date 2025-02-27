@@ -1,4 +1,7 @@
 using System.Net;
+using System.Text.Json;
+using ValidProfiles.Domain.Constants;
+using ValidProfiles.Domain.Exceptions;
 
 namespace ValidProfiles.API.Middleware;
 
@@ -19,11 +22,81 @@ public class ErrorHandlingMiddleware
         {
             await _next(context);
         }
+        catch (CustomException ex)
+        {
+            _logger.LogWarning(ex, "Erro de domínio: {Message}, Código: {ErrorCode}, Status: {StatusCode}", 
+                ex.Message, ex.ErrorCode, ex.StatusCode);
+                
+            await HandleExceptionAsync(context, ex);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro inesperado");
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-            await context.Response.WriteAsJsonAsync(new { error = "Ocorreu um erro interno." });
+            _logger.LogError(ex, "Erro não tratado: {Message}", ex.Message);
+            
+            await HandleExceptionAsync(context, ex);
         }
     }
+    
+    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    {
+        var response = context.Response;
+        response.ContentType = "application/json";
+        
+        var errorResponse = new ErrorResponse
+        {
+            Success = false,
+            Error = new ErrorDetails
+            {
+                Message = ErrorMessages.General.InternalServerError,
+                Code = ErrorCodes.General.InternalServerError
+            }
+        };
+        
+        switch (exception)
+        {
+            case CustomException customException:
+                response.StatusCode = (int)customException.StatusCode;
+                errorResponse.Error = new ErrorDetails
+                {
+                    Message = customException.Message,
+                    Code = customException.ErrorCode
+                };
+                break;
+                
+            case KeyNotFoundException:
+                response.StatusCode = (int)HttpStatusCode.NotFound;
+                errorResponse.Error = new ErrorDetails
+                {
+                    Message = ErrorMessages.Profile.ProfileNotFound,
+                    Code = ErrorCodes.General.NotFound
+                };
+                break;
+                
+            default:
+                response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                errorResponse.Error = new ErrorDetails
+                {
+                    Message = ErrorMessages.General.InternalServerError,
+                    Code = ErrorCodes.General.InternalServerError
+                };
+                break;
+        }
+        
+        var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var result = JsonSerializer.Serialize(errorResponse, jsonOptions);
+        
+        await response.WriteAsync(result);
+    }
+}
+
+public class ErrorResponse
+{
+    public bool Success { get; set; }
+    public required ErrorDetails Error { get; set; }
+}
+
+public class ErrorDetails
+{
+    public required string Message { get; set; }
+    public required string Code { get; set; }
 }

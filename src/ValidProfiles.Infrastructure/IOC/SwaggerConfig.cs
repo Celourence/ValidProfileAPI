@@ -3,7 +3,7 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 
-namespace ValidProfiles.Shared;
+namespace ValidProfiles.Infrastructure.IOC;
 
 /// <summary>
 /// Configurações do Swagger para a API

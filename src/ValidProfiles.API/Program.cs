@@ -1,4 +1,22 @@
-  builder.Services.AddMemoryCache();
+using ValidProfiles.Application.Services;
+using ValidProfiles.Application.Interfaces;
+using ValidProfiles.Domain.Interfaces;
+using ValidProfiles.Infrastructure.Cache;
+using ValidProfiles.Infrastructure.Repositories;
+using ValidProfiles.Infrastructure.IOC;
+using Serilog;
+using ValidProfiles.API.Middleware;
+
+try
+{
+    // Cria o builder da aplicação
+    var builder = WebApplication.CreateBuilder(args);
+
+    // Configuração do Serilog
+    builder.ConfigureSerilog();
+
+    // Adiciona os serviços de cache
+    builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<IProfileCache, ProfileCache>();
     builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
 
@@ -35,7 +53,7 @@
 
     // Executa a aplicação
     app.Run();
-    
+
     return 0;
 }
 catch (Exception ex)

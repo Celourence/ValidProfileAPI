@@ -7,21 +7,21 @@ namespace ValidProfiles.Tests
     public class ProfileCacheTests
     {
         [Fact]
-        public async Task GetCachedProfile_WhenNotInCache_ShouldReturnNull()
+        public async Task GetAsync_WithNonExistentKey_ShouldReturnNull()
         {
             // Arrange
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
             var profileCache = new ProfileCache(memoryCache);
 
             // Act
-            var result = await profileCache.GetAsync("Admin");
+            var result = await profileCache.GetAsync("NonExistent");
 
             // Assert
             Assert.Null(result);
         }
 
         [Fact]
-        public async Task SetAndGetCachedProfile_ShouldReturnCachedProfile()
+        public async Task SetGetAsync_WithValidData_ShouldSetAndGet()
         {
             // Arrange
             var memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -29,7 +29,7 @@ namespace ValidProfiles.Tests
             var profileParameter = new ProfileParameter
             {
                 ProfileName = "Admin",
-                Parameters = new Dictionary<string, string> { { "CanEdit", "true" }, { "CanDelete", "false" } }
+                Parameters = new Dictionary<string, bool> { { "CanEdit", true }, { "CanDelete", false } }
             };
 
             // Act
@@ -39,8 +39,8 @@ namespace ValidProfiles.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Admin", result.ProfileName);
-            Assert.Equal("true", result.Parameters["CanEdit"]);
-            Assert.Equal("false", result.Parameters["CanDelete"]);
+            Assert.True(result.Parameters["CanEdit"]);
+            Assert.False(result.Parameters["CanDelete"]);
         }
     }
 } 

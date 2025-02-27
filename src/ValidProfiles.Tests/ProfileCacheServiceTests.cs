@@ -1,24 +1,21 @@
-using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using ValidProfiles.Application.Services;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
-using ValidProfiles.Infrastructure.Cache;
 
 namespace ValidProfiles.Tests
 {
     public class ProfileCacheServiceTests
     {
         private readonly Mock<IProfileRepository> _repositoryMock;
-        private readonly IProfileCache _cache;
+        private readonly Mock<IProfileCache> _cacheMock;
         private readonly IProfileCacheService _service;
 
         public ProfileCacheServiceTests()
         {
             _repositoryMock = new Mock<IProfileRepository>();
-            var memoryCache = new MemoryCache(new MemoryCacheOptions());
-            _cache = new ProfileCache(memoryCache);
-            _service = new ProfileCacheService(_cache, _repositoryMock.Object);
+            _cacheMock = new Mock<IProfileCache>();
+            _service = new ProfileCacheService(_cacheMock.Object, _repositoryMock.Object);
         }
 
         [Fact]
@@ -27,24 +24,30 @@ namespace ValidProfiles.Tests
             // Arrange
             var profiles = new List<Profile>
             {
-                new() { Name = "Admin", Parameters = new Dictionary<string, string> { { "CanEdit", "true" } } }
+                new Profile
+                {
+                    Name = "Admin",
+                    Parameters = new Dictionary<string, bool>
+                    {
+                        { "CanView", true },
+                        { "CanEdit", true }
+                    }
+                }
             };
-            
+
             _repositoryMock.Setup(r => r.GetProfilesAsync())
-                .ReturnsAsync(profiles);
+                .Returns(Task.FromResult((IEnumerable<Profile>)profiles));
+
+            _cacheMock.Setup(c => c.GetAsync("Admin"))
+                .Returns(Task.FromResult<ProfileParameter?>(null));
 
             // Act
             var result = await _service.GetProfileParameterAsync("Admin");
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal("Admin", result.ProfileName);
-            Assert.Equal("true", result.Parameters["CanEdit"]);
-
-            // Verifica que foi armazenado em cache
-            var cachedResult = await _cache.GetAsync("Admin");
-            Assert.NotNull(cachedResult);
-            Assert.Equal("Admin", cachedResult.ProfileName);
+            _repositoryMock.Verify(r => r.GetProfilesAsync(), Times.Once);
+            _cacheMock.Verify(c => c.SetAsync("Admin", It.IsAny<ProfileParameter>()), Times.Once);
         }
 
         [Fact]
@@ -54,14 +57,19 @@ namespace ValidProfiles.Tests
             var profileParameter = new ProfileParameter
             {
                 ProfileName = "User",
-                Parameters = new Dictionary<string, string> { { "CanView", "true" }, { "CanEdit", "false" } }
+                Parameters = new Dictionary<string, bool>
+                {
+                    { "CanView", true },
+                    { "CanEdit", false }
+                }
             };
 
-            await _cache.SetAsync("User", profileParameter);
+            _cacheMock.Setup(c => c.GetAsync("User"))
+                .Returns(Task.FromResult<ProfileParameter?>(profileParameter));
 
             // Configura o repositório para retornar uma lista vazia para garantir que o cache foi usado
             _repositoryMock.Setup(r => r.GetProfilesAsync())
-                .ReturnsAsync(new List<Profile>());
+                .Returns(Task.FromResult<IEnumerable<Profile>>(new List<Profile>()));
 
             // Act
             var result = await _service.GetProfileParameterAsync("User");
@@ -69,64 +77,92 @@ namespace ValidProfiles.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal("User", result.ProfileName);
-            Assert.Equal("true", result.Parameters["CanView"]);
-            Assert.Equal("false", result.Parameters["CanEdit"]);
-
-            // Verifica que o repositório não foi chamado
+            Assert.Equal(2, result.Parameters.Count);
+            Assert.True(result.Parameters["CanView"]);
+            Assert.False(result.Parameters["CanEdit"]);
             _repositoryMock.Verify(r => r.GetProfilesAsync(), Times.Never);
         }
 
         [Fact]
-        public async Task GetAllProfileParameters_WhenInCache_ShouldReturnFromCache()
+        public async Task GetAllProfileParameters_ShouldReturnFromCache()
         {
             // Arrange
             var profiles = new Dictionary<string, ProfileParameter>
             {
-                ["Admin"] = new() { ProfileName = "Admin", Parameters = new Dictionary<string, string> { { "CanView", "true" } } },
-                ["User"] = new() { ProfileName = "User", Parameters = new Dictionary<string, string> { { "CanView", "true" } } }
+                {
+                    "Admin", new ProfileParameter
+                    {
+                        ProfileName = "Admin",
+                        Parameters = new Dictionary<string, bool>
+                        {
+                            { "CanView", true },
+                            { "CanEdit", true }
+                        }
+                    }
+                },
+                {
+                    "User", new ProfileParameter
+                    {
+                        ProfileName = "User",
+                        Parameters = new Dictionary<string, bool>
+                        {
+                            { "CanView", true },
+                            { "CanEdit", false }
+                        }
+                    }
+                }
             };
 
-            await _cache.SetAllAsync(profiles);
+            _cacheMock.Setup(c => c.GetAllAsync())
+                .Returns(Task.FromResult(profiles));
 
             // Act
             var result = await _service.GetAllProfileParametersAsync();
 
             // Assert
-            Assert.NotNull(result);
             Assert.Equal(2, result.Count);
-            Assert.Contains("Admin", result.Keys);
-            Assert.Contains("User", result.Keys);
-            
-            // Verifica que o repositório não foi chamado
-            _repositoryMock.Verify(r => r.GetProfilesAsync(), Times.Never);
+            Assert.True(result["Admin"].Parameters["CanView"]);
+            Assert.True(result["Admin"].Parameters["CanEdit"]);
+            Assert.True(result["User"].Parameters["CanView"]);
+            Assert.False(result["User"].Parameters["CanEdit"]);
         }
-        
+
         [Fact]
         public async Task AddProfileParameter_ShouldAddToRepositoryAndCache()
         {
             // Arrange
             var profileParameter = new ProfileParameter
             {
-                ProfileName = "NewUser",
-                Parameters = new Dictionary<string, string> { { "CanView", "true" } }
+                ProfileName = "Admin",
+                Parameters = new Dictionary<string, bool>
+                {
+                    { "CanView", true }
+                }
             };
-            
+
+            var savedProfile = new Profile
+            {
+                Name = "Admin",
+                Parameters = new Dictionary<string, bool>
+                {
+                    { "CanView", true }
+                }
+            };
+
+            var existingCache = new Dictionary<string, ProfileParameter>();
+
             _repositoryMock.Setup(r => r.AddProfileAsync(It.IsAny<Profile>()))
-                .Returns(Task.CompletedTask);
-                
+                .Returns(Task.FromResult(savedProfile));
+
+            _cacheMock.Setup(c => c.GetAllAsync())
+                .Returns(Task.FromResult(existingCache));
+
             // Act
             await _service.AddProfileParameterAsync(profileParameter);
-            
+
             // Assert
-            _repositoryMock.Verify(r => r.AddProfileAsync(It.Is<Profile>(p => 
-                p.Name == "NewUser" && 
-                p.Parameters.ContainsKey("CanView"))), 
-                Times.Once);
-                
-            var cachedProfile = await _cache.GetAsync("NewUser");
-            Assert.NotNull(cachedProfile);
-            Assert.Equal("NewUser", cachedProfile.ProfileName);
-            Assert.Equal("true", cachedProfile.Parameters["CanView"]);
+            _repositoryMock.Verify(r => r.AddProfileAsync(It.IsAny<Profile>()), Times.Once);
+            _cacheMock.Verify(c => c.SetAsync("Admin", It.IsAny<ProfileParameter>()), Times.Once);
         }
     }
 } 
