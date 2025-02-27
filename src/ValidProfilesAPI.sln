@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValidProfiles.Application",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValidProfiles.Tests", "ValidProfiles.Tests\ValidProfiles.Tests.csproj", "{B24871C5-5832-4A1C-9988-641C4688842D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ValidProfiles.Shared", "ValidProfiles.Shared\ValidProfiles.Shared.csproj", "{04675A41-A90D-4BFF-9F4F-81355C78A371}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -85,18 +83,6 @@ Global
 		{B24871C5-5832-4A1C-9988-641C4688842D}.Release|x64.Build.0 = Release|Any CPU
 		{B24871C5-5832-4A1C-9988-641C4688842D}.Release|x86.ActiveCfg = Release|Any CPU
 		{B24871C5-5832-4A1C-9988-641C4688842D}.Release|x86.Build.0 = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|x64.Build.0 = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Debug|x86.Build.0 = Debug|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|Any CPU.Build.0 = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|x64.ActiveCfg = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|x64.Build.0 = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|x86.ActiveCfg = Release|Any CPU
-		{04675A41-A90D-4BFF-9F4F-81355C78A371}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

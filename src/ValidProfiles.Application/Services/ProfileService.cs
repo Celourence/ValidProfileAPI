@@ -1,31 +1,40 @@
 ﻿using ValidProfiles.Application.DTOs;
+using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
 
-namespace ValidProfiles.Application;
+namespace ValidProfiles.Application.Services;
 
 public class ProfileService : IProfileService
 {
     private readonly IProfileRepository _profileRepository;
 
-    public ProfileService(IProfileRepository profileRepository)
-    {
+    public ProfileService(IProfileRepository profileRepository) => 
         _profileRepository = profileRepository;
-    }
 
-    public IEnumerable<Profile> GetProfiles()
+    public async Task<ProfilesResponseDto> GetProfilesAsync()
     {
-        var profiles = _profileRepository.GetProfiles();
-        return profiles.Select(p => new Profile 
+        var profiles = await _profileRepository.GetProfilesAsync();
+        return new ProfilesResponseDto
         {
-            Name = p.Name,
-            Parameters = p.Parameters
-        });
+            Profiles = profiles.Select(p => new ProfileResponseDto 
+            {
+                Name = p.Name,
+                Parameters = p.Parameters ?? new Dictionary<string, string>()
+            }).ToList()
+        };
     }
 
-    public void AddProfile(Profile profile)
+    public async Task<ProfileResponseDto> AddProfileAsync(Profile profile)
     {
-        _profileRepository.AddProfile(profile);
+        profile.Parameters ??= new Dictionary<string, string>();
+        await _profileRepository.AddProfileAsync(profile);
+        
+        return new ProfileResponseDto
+        {
+            Name = profile.Name,
+            Parameters = profile.Parameters
+        };
     }
 }
 

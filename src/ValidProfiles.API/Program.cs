@@ -1,41 +1,49 @@
+  builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<IProfileCache, ProfileCache>();
+    builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
 
-using Serilog;
-using ValidProfiles.Application;
-using ValidProfiles.Domain;
-using ValidProfiles.Domain.Interfaces;
-using ValidProfiles.Infrastructure.Repositories;
-using ValidProfiles.Shared.ValidProfiles.API;
+    // Adiciona os outros serviços
+    builder.Services.AddControllers();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
+    builder.Services.AddSingleton<IProfileService, ProfileService>();
+    builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
 
-var builder = WebApplication.CreateBuilder(args);
+    // Constrói a aplicação
+    var app = builder.Build();
 
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .CreateLogger();
-builder.Host.UseSerilog();
+    // Adiciona o middleware de tratamento global de exceções
+    app.UseGlobalExceptionHandling();
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
-builder.Services.AddScoped<IProfileService, ProfileService>();
-builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
+    // Configura ambiente de desenvolvimento
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseSwagger();
+        app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
+    }
 
-var app = builder.Build();
+    // Configuração da pipeline de requisições HTTP
+    app.UseHttpsRedirection();
+    app.UseRouting();
+    app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ValidProfiles API v1"));
+    // Configuração do Serilog para logging de requisições
+    app.UseSerilogRequestLogging();
+
+    app.MapControllers();
+
+    // Executa a aplicação
+    app.Run();
+    
+    return 0;
 }
-
-app.UseHttpsRedirection();
-app.UseStatusCodePages();
-app.UseRouting();
-app.UseAuthorization();
-
-app.UseEndpoints(endpoints =>
+catch (Exception ex)
 {
-    endpoints.MapControllers();
-});
-
-app.Run();
+    Log.Fatal(ex, "A aplicação falhou ao iniciar");
+    return 1;
+}
+finally
+{
+    Log.CloseAndFlush();
+}

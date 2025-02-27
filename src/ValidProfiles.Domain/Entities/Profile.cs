@@ -2,6 +2,6 @@
 
 public class Profile
 {
-    public string Name { get; set; }
-    public Dictionary<string, string> Parameters { get; set; }
+    public required string Name { get; set; }
+    public Dictionary<string, string> Parameters { get; set; } = new();
 }
