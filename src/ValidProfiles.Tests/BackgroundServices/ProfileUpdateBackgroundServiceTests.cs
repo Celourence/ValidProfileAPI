@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ValidProfiles.Application.DTOs;
+using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
 using ValidProfiles.Infrastructure.BackgroundServices;
@@ -13,8 +15,7 @@ namespace ValidProfiles.Tests.BackgroundServices
         private readonly Mock<IServiceProvider> _serviceProviderMock;
         private readonly Mock<IServiceScope> _serviceScopeMock;
         private readonly Mock<IServiceScopeFactory> _serviceScopeFactoryMock;
-        private readonly Mock<IProfileRepository> _repositoryMock;
-        private readonly Mock<IProfileCache> _cacheMock;
+        private readonly Mock<IProfileService> _profileServiceMock;
 
         public ProfileUpdateBackgroundServiceTests()
         {
@@ -22,8 +23,7 @@ namespace ValidProfiles.Tests.BackgroundServices
             _serviceProviderMock = new Mock<IServiceProvider>();
             _serviceScopeMock = new Mock<IServiceScope>();
             _serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
-            _repositoryMock = new Mock<IProfileRepository>();
-            _cacheMock = new Mock<IProfileCache>();
+            _profileServiceMock = new Mock<IProfileService>();
 
             // Configurar o escopo de serviço
             _serviceScopeMock.Setup(s => s.ServiceProvider).Returns(_serviceProviderMock.Object);
@@ -31,32 +31,31 @@ namespace ValidProfiles.Tests.BackgroundServices
             _serviceProviderMock.Setup(p => p.GetService(typeof(IServiceScopeFactory))).Returns(_serviceScopeFactoryMock.Object);
             
             // Configurar os serviços para serem resolvidos via GetRequiredService
-            _serviceProviderMock.Setup(p => p.GetService(typeof(IProfileRepository))).Returns(_repositoryMock.Object);
-            _serviceProviderMock.Setup(p => p.GetService(typeof(IProfileCache))).Returns(_cacheMock.Object);
+            _serviceProviderMock.Setup(p => p.GetService(typeof(IProfileService))).Returns(_profileServiceMock.Object);
         }
 
         [Fact]
         public async Task StartAsync_ShouldCallUpdateProfileParameters()
         {
             // Arrange
-            var profiles = new List<Profile>
+            var profilesResponse = new ProfilesResponseDto
             {
-                new Profile
+                Profiles = new List<ProfileResponseDto>
                 {
-                    Name = "TestProfile",
-                    Parameters = new Dictionary<string, bool>
+                    new ProfileResponseDto
                     {
-                        { "CanEdit", true },
-                        { "CanDelete", false }
+                        Name = "TestProfile",
+                        Parameters = new Dictionary<string, bool>
+                        {
+                            { "CanEdit", true },
+                            { "CanDelete", false }
+                        }
                     }
                 }
             };
 
-            _repositoryMock.Setup(r => r.GetProfilesAsync())
-                .Returns(Task.FromResult<IEnumerable<Profile>>(profiles));
-
-            _repositoryMock.Setup(r => r.UpdateProfileAsync(It.IsAny<Profile>()))
-                .Returns((Profile p) => Task.FromResult(p));
+            _profileServiceMock.Setup(s => s.GetProfilesAsync())
+                .ReturnsAsync(profilesResponse);
 
             // Usar um intervalo curto para o teste (100ms)
             var backgroundService = new ProfileUpdateBackgroundService(
@@ -82,8 +81,7 @@ namespace ValidProfiles.Tests.BackgroundServices
             
             // Verificar se os métodos foram chamados
             _serviceScopeFactoryMock.Verify(f => f.CreateScope(), Times.AtLeastOnce);
-            _repositoryMock.Verify(r => r.GetProfilesAsync(), Times.AtLeastOnce);
-            _repositoryMock.Verify(r => r.UpdateProfileAsync(It.IsAny<Profile>()), Times.AtLeastOnce);
+            _profileServiceMock.Verify(s => s.GetProfilesAsync(), Times.AtLeastOnce);
         }
     }
 } 

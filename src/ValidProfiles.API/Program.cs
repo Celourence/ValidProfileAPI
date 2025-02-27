@@ -7,6 +7,7 @@ using ValidProfiles.Infrastructure.IOC;
 using Serilog;
 using ValidProfiles.API.Middleware;
 using ValidProfiles.Infrastructure.BackgroundServices;
+using Microsoft.Extensions.DependencyInjection;
 
 try
 {
@@ -19,14 +20,16 @@ try
     // Adiciona os serviços de cache
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<IProfileCache, ProfileCache>();
-    builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
 
     // Adiciona os outros serviços
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
-    builder.Services.AddSingleton<IProfileService, ProfileService>();
+    
+    // Registra os serviços na ordem correta para evitar dependência circular
     builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
+    builder.Services.AddSingleton<IProfileService, ProfileService>();
+    builder.Services.AddSingleton<IProfileCacheService, ProfileCacheService>();
 
     // Adiciona o serviço de background para atualização periódica com intervalo de 5 minutos
     builder.Services.AddHostedService<ProfileUpdateBackgroundService>(sp => 

@@ -1,18 +1,25 @@
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
+
 namespace ValidProfiles.Application.DTOs
 {
     /// <summary>
-    /// DTO para resposta da validação de permissões de um perfil
+    /// Representa a resposta de validação de permissões de um perfil
     /// </summary>
     public class ValidationResponseDto
     {
         /// <summary>
-        /// Nome do perfil
+        /// Nome do perfil validado
         /// </summary>
-        public string ProfileName { get; set; }
-
+        [JsonPropertyName("profileName")]
+        public required string ProfileName { get; set; }
+        
         /// <summary>
-        /// Dicionário contendo as ações e seus respectivos resultados de validação
+        /// Resultados das validações de permissões
+        /// Chave: Nome da ação
+        /// Valor: Resultado da validação (Allowed, Denied, Undefined)
         /// </summary>
+        [JsonPropertyName("results")]
         public Dictionary<string, string> Results { get; set; } = new Dictionary<string, string>();
     }
 } 

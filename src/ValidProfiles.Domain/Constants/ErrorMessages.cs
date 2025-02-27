@@ -4,34 +4,34 @@ namespace ValidProfiles.Domain.Constants
     {
         public static class Profile
         {
-            public const string ProfileNotFound = "Perfil não encontrado";
-            public const string ProfileAlreadyExists = "Um perfil com este nome já existe";
-            public const string ParameterAlreadyExists = "Este parâmetro já existe para o perfil especificado";
-            public const string InvalidProfileName = "Nome de perfil inválido";
-            public const string EmptyParameterName = "Nome do parâmetro não pode ser vazio";
-            public const string EmptyParameterValue = "Valor do parâmetro não pode ser vazio";
+            public const string ProfileNotFound = "Profile not found";
+            public const string ProfileAlreadyExists = "A profile with this name already exists";
+            public const string ParameterAlreadyExists = "This parameter already exists for the specified profile";
+            public const string InvalidProfileName = "Invalid profile name";
+            public const string EmptyParameterName = "Parameter name cannot be empty";
+            public const string EmptyParameterValue = "Parameter value cannot be empty";
         }
         
         public static class Validation
         {
-            public const string RequiredField = "O campo {0} é obrigatório";
-            public const string InvalidFormat = "O campo {0} está em formato inválido";
-            public const string MaxLength = "O campo {0} deve ter no máximo {1} caracteres";
-            public const string MinLength = "O campo {0} deve ter no mínimo {1} caracteres";
+            public const string RequiredField = "The field {0} is required";
+            public const string InvalidFormat = "The field {0} has an invalid format";
+            public const string MaxLength = "The field {0} must have a maximum of {1} characters";
+            public const string MinLength = "The field {0} must have a minimum of {1} characters";
         }
         
-        public static class Authorization
+        public static class Authentication
         {
-            public const string Unauthorized = "Acesso não autorizado";
-            public const string InvalidToken = "Token inválido ou expirado";
-            public const string InsufficientPermissions = "Permissões insuficientes para esta operação";
+            public const string Unauthorized = "Unauthorized";
+            public const string InvalidCredentials = "Invalid credentials";
+            public const string InvalidToken = "Invalid or expired token";
         }
         
         public static class General
         {
-            public const string InternalServerError = "Erro interno do servidor";
-            public const string ServiceUnavailable = "Serviço temporariamente indisponível";
-            public const string BadRequest = "Requisição inválida";
+            public const string InternalServerError = "Internal server error";
+            public const string ServiceUnavailable = "Service temporarily unavailable";
+            public const string BadRequest = "Bad request";
         }
     }
 } 

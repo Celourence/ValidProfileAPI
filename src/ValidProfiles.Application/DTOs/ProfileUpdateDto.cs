@@ -10,7 +10,7 @@ namespace ValidProfiles.Application.DTOs
         /// <summary>
         /// Parâmetros do perfil (nome do parâmetro e valor)
         /// </summary>
-        [Required(ErrorMessage = "Os parâmetros são obrigatórios")]
+        [Required(ErrorMessage = "Parameters are required")]
         public Dictionary<string, bool> Parameters { get; set; } = new();
     }
 } 

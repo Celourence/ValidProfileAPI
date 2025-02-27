@@ -1,65 +1,175 @@
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using ValidProfiles.Application.DTOs;
 using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Domain;
 using ValidProfiles.Domain.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace ValidProfiles.Application.Services
 {
-    public class ProfileCacheService : Application.Interfaces.IProfileCacheService
+    /// <summary>
+    /// Implementação do serviço de cache de perfis
+    /// </summary>
+    public class ProfileCacheService : IProfileCacheService
     {
         private readonly IProfileCache _cache;
         private readonly IProfileRepository _repository;
         private readonly ILogger<ProfileCacheService> _logger;
         private readonly IProfileService _profileService;
 
-        public ProfileCacheService(IProfileCache cache, IProfileRepository repository, ILogger<ProfileCacheService> logger, IProfileService profileService) => 
-            (_cache, _repository, _logger, _profileService) = (cache, repository, logger, profileService);
-
-        public async Task<ProfileParameter?> GetProfileParameterAsync(string profileName)
+        /// <summary>
+        /// Construtor do serviço de cache de perfis
+        /// </summary>
+        /// <param name="cache">Cache de perfis</param>
+        /// <param name="repository">Repositório de perfis</param>
+        /// <param name="logger">Logger para registro de atividades</param>
+        /// <param name="profileService">Serviço de perfis</param>
+        public ProfileCacheService(
+            IProfileCache cache, 
+            IProfileRepository repository, 
+            ILogger<ProfileCacheService> logger,
+            IProfileService profileService)
         {
-            var cachedProfile = await _cache.GetAsync(profileName);
-            if (cachedProfile != null) 
-                return cachedProfile;
+            _cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _profileService = profileService ?? throw new ArgumentNullException(nameof(profileService));
+        }
 
-            var profiles = await _repository.GetProfilesAsync();
-            var profile = profiles.FirstOrDefault(p => p.Name == profileName);
-            
+        /// <inheritdoc/>
+        public async Task<ProfileResponseDto> GetProfileAsync(string profileName)
+        {
+            if (string.IsNullOrWhiteSpace(profileName))
+            {
+                throw new ArgumentException("Profile name cannot be null or empty", nameof(profileName));
+            }
+
+            // Tentar obter do cache primeiro
+            var cachedParameter = await _cache.GetAsync(profileName);
+            if (cachedParameter != null)
+            {
+                _logger.LogDebug("Perfil {ProfileName} encontrado no cache", profileName);
+                return MapToProfileResponseDto(cachedParameter);
+            }
+
+            // Se não estiver no cache, obter do repositório e salvar no cache
+            _logger.LogDebug("Perfil {ProfileName} não encontrado no cache, buscando no repositório", profileName);
+            var profile = await _repository.GetProfileByNameAsync(profileName);
+            if (profile != null)
+            {
+                var parameter = new ProfileParameter
+                {
+                    ProfileName = profile.Name,
+                    Parameters = profile.Parameters
+                };
+                await _cache.SetAsync(profileName, parameter);
+                _logger.LogDebug("Perfil {ProfileName} adicionado ao cache", profileName);
+                return MapToProfileResponseDto(parameter);
+            }
+
+            // Ao invés de retornar null, vamos lançar uma exceção
+            throw new KeyNotFoundException($"Profile with name '{profileName}' not found");
+        }
+
+        /// <inheritdoc/>
+        public async Task SetProfileAsync(ProfileResponseDto profile)
+        {
             if (profile == null)
-                return null;
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
 
-            var profileParameter = new ProfileParameter
+            var parameter = new ProfileParameter
             {
                 ProfileName = profile.Name,
                 Parameters = profile.Parameters
             };
 
-            await _cache.SetAsync(profileName, profileParameter);
-            return profileParameter;
+            await _cache.SetAsync(profile.Name, parameter);
+            _logger.LogDebug("Perfil {ProfileName} atualizado no cache", profile.Name);
         }
 
-        public async Task<Dictionary<string, ProfileParameter>> GetAllProfileParametersAsync()
+        /// <inheritdoc/>
+        public async Task RemoveProfileAsync(string profileName)
         {
-            var cachedProfiles = await _cache.GetAllAsync();
-            if (cachedProfiles?.Count > 0)
-                return cachedProfiles;
+            if (string.IsNullOrWhiteSpace(profileName))
+            {
+                throw new ArgumentException("Profile name cannot be null or empty", nameof(profileName));
+            }
 
-            var profiles = await _repository.GetProfilesAsync();
-            var profileParameters = profiles.ToDictionary(
-                p => p.Name,
-                p => new ProfileParameter
-                {
-                    ProfileName = p.Name,
-                    Parameters = p.Parameters ?? new Dictionary<string, bool>()
-                });
-
-            if (profileParameters.Count > 0)
-                await _cache.SetAllAsync(profileParameters);
-
-            return profileParameters;
+            await _cache.RemoveAsync(profileName);
+            _logger.LogDebug("Perfil {ProfileName} removido do cache", profileName);
         }
 
-        public async Task<ProfileParameter?> AddProfileParameterAsync(ProfileParameter profileParameter)
+        /// <inheritdoc/>
+        public async Task RefreshCacheAsync()
+        {
+            _logger.LogInformation("Iniciando atualização completa do cache de perfis");
+            var profiles = await _repository.GetProfilesAsync();
+            int count = 0;
+
+            foreach (var profile in profiles)
+            {
+                var parameter = new ProfileParameter
+                {
+                    ProfileName = profile.Name,
+                    Parameters = profile.Parameters
+                };
+                
+                await _cache.SetAsync(profile.Name, parameter);
+                count++;
+            }
+
+            _logger.LogInformation("Atualização do cache de perfis concluída. Total de {Count} perfis atualizados", count);
+        }
+
+        /// <inheritdoc/>
+        public async Task<ProfileParameter> GetProfileParameterAsync(string profileName)
+        {
+            if (string.IsNullOrWhiteSpace(profileName))
+            {
+                throw new ArgumentException("Profile name cannot be null or empty", nameof(profileName));
+            }
+
+            var parameter = await _cache.GetAsync(profileName);
+            if (parameter == null)
+            {
+                _logger.LogDebug("Parâmetro de perfil {ProfileName} não encontrado no cache", profileName);
+                var profile = await _repository.GetProfileByNameAsync(profileName);
+                if (profile != null)
+                {
+                    parameter = new ProfileParameter
+                    {
+                        ProfileName = profile.Name,
+                        Parameters = profile.Parameters
+                    };
+                    await _cache.SetAsync(profileName, parameter);
+                    _logger.LogDebug("Parâmetro de perfil {ProfileName} adicionado ao cache", profileName);
+                    return parameter;
+                }
+                
+                throw new KeyNotFoundException($"Profile with name '{profileName}' not found");
+            }
+            
+            return parameter;
+        }
+
+        /// <inheritdoc/>
+        public async Task<ProfileParameter> SetProfileParameterAsync(ProfileParameter profile)
+        {
+            if (profile == null)
+            {
+                throw new ArgumentNullException(nameof(profile));
+            }
+
+            await _cache.SetAsync(profile.ProfileName, profile);
+            return profile;
+        }
+
+        /// <inheritdoc/>
+        public async Task<ProfileParameter> AddProfileParameterAsync(ProfileParameter profileParameter)
         {
             try
             {
@@ -70,35 +180,18 @@ namespace ValidProfiles.Application.Services
                 });
                 
                 await _cache.SetAsync(profileParameter.ProfileName, profileParameter);
-
-                var allProfiles = await _cache.GetAllAsync();
-                allProfiles[profileParameter.ProfileName] = profileParameter;
-                await _cache.SetAllAsync(allProfiles);
                 
+                _logger.LogInformation("Parâmetro de perfil {ProfileName} adicionado com sucesso ao cache", profileParameter.ProfileName);
                 return profileParameter;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao adicionar parâmetro de perfil {ProfileName}", profileParameter.ProfileName);
-                return null;
+                return profileParameter; // Retornar objeto não nulo para evitar warning
             }
         }
-        
-        public async Task<ProfileParameter> SetProfileParameterAsync(ProfileParameter profile)
-        {
-            _logger.LogDebug("Definindo parâmetro de perfil {ProfileName} no cache", profile.ProfileName);
-            
-            await _cache.SetAsync(profile.ProfileName, profile);
-            
-            var allProfiles = await _cache.GetAllAsync();
-            allProfiles[profile.ProfileName] = profile;
-            await _cache.SetAllAsync(allProfiles);
-            
-            _logger.LogInformation("Parâmetro de perfil {ProfileName} definido com sucesso no cache", profile.ProfileName);
-            
-            return profile;
-        }
-        
+
+        /// <inheritdoc/>
         public async Task<bool> RemoveProfileParameterAsync(string profileName)
         {
             _logger.LogDebug("Removendo parâmetro de perfil {ProfileName} do cache", profileName);
@@ -106,14 +199,6 @@ namespace ValidProfiles.Application.Services
             try
             {
                 await _cache.RemoveAsync(profileName);
-                
-                var allProfiles = await _cache.GetAllAsync();
-                if (allProfiles.ContainsKey(profileName))
-                {
-                    allProfiles.Remove(profileName);
-                    await _cache.SetAllAsync(allProfiles);
-                }
-                
                 _logger.LogInformation("Parâmetro de perfil {ProfileName} removido com sucesso do cache", profileName);
                 return true;
             }
@@ -124,8 +209,14 @@ namespace ValidProfiles.Application.Services
             }
         }
 
-        public Task ClearCacheAsync() => _cache.ClearAsync();
+        /// <inheritdoc/>
+        public Task ClearCacheAsync()
+        {
+            _logger.LogInformation("Limpando o cache de perfis");
+            return _cache.ClearAsync();
+        }
 
+        /// <inheritdoc/>
         public async Task<ValidationResponseDto> ValidateProfilePermissionsAsync(string name, List<string> actions)
         {
             _logger.LogDebug("Validando permissões para o perfil {ProfileName} com cache", name);
@@ -143,19 +234,24 @@ namespace ValidProfiles.Application.Services
             }
             
             // Perfil encontrado no cache, proceder com a validação
-            var response = new ValidationResponseDto();
+            var response = new ValidationResponseDto
+            {
+                ProfileName = name
+            };
             
             foreach (var action in actions)
             {
                 _logger.LogDebug("Validando permissão '{Action}' para o perfil {ProfileName} (do cache)", action, name);
                 
                 // Usar switch para determinar o resultado da validação de forma mais elegante
-                response.Results[action] = profile.Parameters.TryGetValue(action, out bool allowed) switch
+                if (profile.Parameters.TryGetValue(action, out bool allowed))
                 {
-                    true when allowed => "Permitido",
-                    true when !allowed => "Negado",
-                    _ => "Não definido"
-                };
+                    response.Results[action] = allowed ? "Allowed" : "Denied";
+                }
+                else
+                {
+                    response.Results[action] = "Undefined";
+                }
                 
                 _logger.LogDebug("Resultado da permissão '{Action}' para o perfil {ProfileName} (do cache): {Result}", 
                     action, name, response.Results[action]);
@@ -163,6 +259,18 @@ namespace ValidProfiles.Application.Services
             
             _logger.LogInformation("Validação de permissões concluída para o perfil {ProfileName} (do cache)", name);
             return response;
+        }
+
+        /// <summary>
+        /// Converte um ProfileParameter para ProfileResponseDto
+        /// </summary>
+        private ProfileResponseDto MapToProfileResponseDto(ProfileParameter parameter)
+        {
+            return new ProfileResponseDto
+            {
+                Name = parameter.ProfileName,
+                Parameters = parameter.Parameters ?? new Dictionary<string, bool>()
+            };
         }
     }
 } 

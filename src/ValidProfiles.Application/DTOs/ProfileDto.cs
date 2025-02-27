@@ -12,8 +12,8 @@ public class ProfileDto
     /// <summary>
     /// Nome do perfil
     /// </summary>
-    [Required(ErrorMessage = "O nome do perfil é obrigatório")]
-    [StringLength(50, ErrorMessage = "O nome do perfil deve ter no máximo 50 caracteres")]
+    [Required(ErrorMessage = "Profile name is required")]
+    [StringLength(50, ErrorMessage = "Profile name must have a maximum of 50 characters")]
     [JsonPropertyName("profileName")]
     [SwaggerSchema("Nome do perfil", Nullable = false)]
     public required string Name { get; set; }
@@ -27,6 +27,6 @@ public class ProfileDto
     /// </remarks>
     [JsonPropertyName("parameters")]
     [SwaggerSchema("Parâmetros do perfil (valores booleanos)")]
-    [Required(ErrorMessage = "Pelo menos um parâmetro é obrigatório")]
+    [Required(ErrorMessage = "At least one parameter is required")]
     public Dictionary<string, bool> Parameters { get; set; } = new();
 }

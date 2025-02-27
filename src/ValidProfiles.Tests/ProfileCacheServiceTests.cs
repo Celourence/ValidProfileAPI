@@ -51,12 +51,16 @@ namespace ValidProfiles.Tests
             _cacheMock.Setup(c => c.GetAsync("Admin"))
                 .Returns(Task.FromResult<ProfileParameter?>(null));
 
+            // Configurar o repositório para retornar o perfil diretamente
+            _repositoryMock.Setup(r => r.GetProfileByNameAsync("Admin"))
+                .ReturnsAsync(profiles.First());
+
             // Act
             var result = await _service.GetProfileParameterAsync("Admin");
 
             // Assert
             Assert.NotNull(result);
-            _repositoryMock.Verify(r => r.GetProfilesAsync(), Times.Once);
+            _repositoryMock.Verify(r => r.GetProfileByNameAsync("Admin"), Times.Once);
             _cacheMock.Verify(c => c.SetAsync("Admin", It.IsAny<ProfileParameter>()), Times.Once);
         }
 
@@ -158,9 +162,9 @@ namespace ValidProfiles.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(3, result.Results.Count);
-            Assert.Equal("Permitido", result.Results["CanEdit"]);
-            Assert.Equal("Negado", result.Results["CanDelete"]);
-            Assert.Equal("Não definido", result.Results["NonExistentAction"]);
+            Assert.Equal("Allowed", result.Results["CanEdit"]);
+            Assert.Equal("Denied", result.Results["CanDelete"]);
+            Assert.Equal("Undefined", result.Results["NonExistentAction"]);
             
             // Verificar que o ProfileService não foi chamado
             _profileServiceMock.Verify(service => 
@@ -182,10 +186,11 @@ namespace ValidProfiles.Tests
             // Configurar o ProfileService para retornar uma resposta
             var expectedResponse = new ValidationResponseDto
             {
+                ProfileName = "TestProfile",
                 Results = new Dictionary<string, string>
                 {
-                    { "CanEdit", "Permitido" },
-                    { "CanDelete", "Negado" }
+                    { "CanEdit", "Allowed" },
+                    { "CanDelete", "Denied" }
                 }
             };
             
@@ -198,9 +203,9 @@ namespace ValidProfiles.Tests
             
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(2, result.Results.Count);
-            Assert.Equal("Permitido", result.Results["CanEdit"]);
-            Assert.Equal("Negado", result.Results["CanDelete"]);
+            Assert.Equal(expectedResponse.Results.Count, result.Results.Count);
+            Assert.Equal("Allowed", result.Results["CanEdit"]);
+            Assert.Equal("Denied", result.Results["CanDelete"]);
             
             // Verificar que o ProfileService foi chamado
             _profileServiceMock.Verify(service => 

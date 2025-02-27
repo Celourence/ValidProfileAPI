@@ -199,7 +199,7 @@ namespace ValidProfiles.Tests
             var exception = await Assert.ThrowsAsync<BadRequestException>(() => 
                 _service.UpdateProfileAsync(profileName, parameters));
 
-            Assert.Equal("A lista de parâmetros não pode estar vazia", exception.Message);
+            Assert.Equal("Parameter list cannot be empty", exception.Message);
             
             // Na implementação atual, o método não chega a chamar o repositório quando
             // os parâmetros estão vazios, então não verificamos chamadas ao repositório
@@ -375,9 +375,9 @@ namespace ValidProfiles.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(3, result.Results.Count);
-            Assert.Equal("Permitido", result.Results["CanEdit"]);
-            Assert.Equal("Negado", result.Results["CanDelete"]);
-            Assert.Equal("Não definido", result.Results["NonExistentAction"]);
+            Assert.Equal("Allowed", result.Results["CanEdit"]);
+            Assert.Equal("Denied", result.Results["CanDelete"]);
+            Assert.Equal("Undefined", result.Results["NonExistentAction"]);
         }
 
         [Fact]
@@ -429,6 +429,25 @@ namespace ValidProfiles.Tests
             // Act & Assert
             await Assert.ThrowsAsync<BadRequestException>(() => 
                 _service.ValidateProfilePermissionsAsync(name, actions));
+        }
+
+        [Fact]
+        public async Task AddProfileAsync_WithEmptyParameters_ShouldThrowBadRequestException()
+        {
+            // Arrange
+            var profileName = "TestProfile";
+            var profile = new Profile
+            {
+                Name = profileName,
+                Parameters = new Dictionary<string, bool>()
+            };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<BadRequestException>(() => 
+                _service.AddProfileAsync(profile));
+                
+            // Verificar a mensagem de erro
+            Assert.Equal("Parameter list cannot be empty", exception.Message);
         }
     }
 } 

@@ -84,7 +84,7 @@ public class ProfileService : IProfileService
         if (profile.Parameters == null || profile.Parameters.Count == 0)
         {
             _logger.LogWarning("Tentativa de adicionar perfil sem parâmetros: {ProfileName}", profile.Name);
-            throw new BadRequestException("A lista de parâmetros não pode estar vazia");
+            throw new BadRequestException("Parameter list cannot be empty");
         }
 
         foreach (var param in profile.Parameters)
@@ -127,7 +127,7 @@ public class ProfileService : IProfileService
         if (parameters == null || parameters.Count == 0)
         {
             _logger.LogWarning("Tentativa de atualizar perfil com parâmetros vazios: {ProfileName}", name);
-            throw new BadRequestException("A lista de parâmetros não pode estar vazia");
+            throw new BadRequestException("Parameter list cannot be empty");
         }
         
         // Verificar se o perfil existe
@@ -191,8 +191,9 @@ public class ProfileService : IProfileService
 
     public async Task<ValidationResponseDto> ValidateProfilePermissionsAsync(string name, List<string> actions)
     {
+        _logger.LogInformation("Validando permissões para o perfil: {ProfileName}", name);
         _logger.LogDebug("Validando permissões para o perfil {ProfileName}", name);
-        
+
         if (string.IsNullOrWhiteSpace(name))
         {
             _logger.LogWarning("Tentativa de validar permissões para perfil com nome vazio");
@@ -202,7 +203,7 @@ public class ProfileService : IProfileService
         if (actions == null || actions.Count == 0)
         {
             _logger.LogWarning("Lista de ações vazia para validação do perfil {ProfileName}", name);
-            throw new BadRequestException("A lista de ações não pode estar vazia");
+            throw new BadRequestException("Action list cannot be empty");
         }
         
         // Verificar se o perfil existe
@@ -213,19 +214,23 @@ public class ProfileService : IProfileService
             throw new NotFoundException(ErrorMessages.Profile.ProfileNotFound);
         }
         
-        var response = new ValidationResponseDto();
+        var response = new ValidationResponseDto
+        {
+            ProfileName = name
+        };
         
         foreach (var action in actions)
         {
             _logger.LogDebug("Validando permissão '{Action}' para o perfil {ProfileName}", action, name);
             
-            // Usar switch para determinar o resultado da validação de forma mais elegante
-            response.Results[action] = profile.Parameters.TryGetValue(action, out bool allowed) switch
+            if (profile.Parameters.TryGetValue(action, out bool allowed))
             {
-                true when allowed => "Permitido",
-                true when !allowed => "Negado",
-                _ => "Não definido"
-            };
+                response.Results[action] = allowed ? "Allowed" : "Denied";
+            }
+            else
+            {
+                response.Results[action] = "Undefined";
+            }
             
             _logger.LogDebug("Resultado da permissão '{Action}' para o perfil {ProfileName}: {Result}", 
                 action, name, response.Results[action]);

@@ -33,11 +33,12 @@ namespace ValidProfiles.Tests
             
             var expectedResponse = new ValidationResponseDto
             {
+                ProfileName = "TestProfile",
                 Results = new Dictionary<string, string>
                 {
-                    { "CanEdit", "Permitido" },
-                    { "CanDelete", "Negado" },
-                    { "NonExistentAction", "Não definido" }
+                    { "CanEdit", "Allowed" },
+                    { "CanDelete", "Denied" },
+                    { "NonExistentAction", "Undefined" }
                 }
             };
             
@@ -54,9 +55,9 @@ namespace ValidProfiles.Tests
             var returnValue = Assert.IsType<ValidationResponseDto>(okResult.Value);
             
             Assert.Equal(3, returnValue.Results.Count);
-            Assert.Equal("Permitido", returnValue.Results["CanEdit"]);
-            Assert.Equal("Negado", returnValue.Results["CanDelete"]);
-            Assert.Equal("Não definido", returnValue.Results["NonExistentAction"]);
+            Assert.Equal("Allowed", returnValue.Results["CanEdit"]);
+            Assert.Equal("Denied", returnValue.Results["CanDelete"]);
+            Assert.Equal("Undefined", returnValue.Results["NonExistentAction"]);
         }
 
         [Fact]
@@ -92,7 +93,7 @@ namespace ValidProfiles.Tests
             _serviceMock.Setup(service => service.ValidateProfilePermissionsAsync(
                     profileName, 
                     It.IsAny<List<string>>()))
-                .ThrowsAsync(new BadRequestException("A lista de ações não pode estar vazia"));
+                .ThrowsAsync(new BadRequestException("Action list cannot be empty"));
             
             // Act & Assert
             await Assert.ThrowsAsync<BadRequestException>(() => 
