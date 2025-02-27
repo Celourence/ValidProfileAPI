@@ -6,6 +6,7 @@ using ValidProfiles.Infrastructure.Repositories;
 using ValidProfiles.Infrastructure.IOC;
 using Serilog;
 using ValidProfiles.API.Middleware;
+using ValidProfiles.Infrastructure.BackgroundServices;
 
 try
 {
@@ -26,6 +27,15 @@ try
     builder.Services.AddSwaggerGen(SwaggerConfig.Configure);
     builder.Services.AddSingleton<IProfileService, ProfileService>();
     builder.Services.AddSingleton<IProfileRepository, ProfileRepository>();
+
+    // Adiciona o serviço de background para atualização periódica com intervalo de 5 minutos
+    builder.Services.AddHostedService<ProfileUpdateBackgroundService>(sp => 
+        new ProfileUpdateBackgroundService(
+            sp.GetRequiredService<ILogger<ProfileUpdateBackgroundService>>(),
+            sp,
+            TimeSpan.FromMinutes(5)
+        )
+    );
 
     // Constrói a aplicação
     var app = builder.Build();

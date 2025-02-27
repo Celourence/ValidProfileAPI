@@ -5,7 +5,6 @@ using ValidProfiles.API.Controllers;
 using ValidProfiles.Application.DTOs;
 using ValidProfiles.Application.Interfaces;
 using ValidProfiles.Domain.Exceptions;
-using Xunit;
 
 namespace ValidProfiles.Tests
 {
