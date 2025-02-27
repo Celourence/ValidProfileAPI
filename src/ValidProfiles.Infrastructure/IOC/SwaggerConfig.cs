@@ -3,41 +3,6 @@ using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 
-namespace ValidProfiles.Shared;
-
-/// <summary>
-/// Configurações do Swagger para a API
-/// </summary>
-public static class SwaggerConfig
-{
-    /// <summary>
-    /// Configura o Swagger para a API
-    /// </summary>
-    public static void Configure(SwaggerGenOptions options)
-    {
-        options.SwaggerDoc("v1", new OpenApiInfo
-        {
-            Version = "v1",
-            Title = "ValidProfiles API",
-            Description = "API para gerenciamento de perfis válidos",
-            Contact = new OpenApiContact
-            {
-                Name = "Suporte",
-                Email = "suporte@validprofiles.com"
-            }
-        });
-
-        // Adiciona suporte para JWT Bearer token
-        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-        {
-            Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-            Name = "Authorization",
-            In = ParameterLocation.Header,
-            Type = SecuritySchemeType.ApiKey,
-            Scheme = "Bearer"
-        });
-using System.Reflection;
-
 namespace ValidProfiles.Infrastructure.IOC;
 
 /// <summary>
